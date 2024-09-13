@@ -25,7 +25,7 @@ const BlogPosts = () => {
 
         const items = data.items || [];
 
-        const formattedPosts = items.map((item: any) => ({
+        const formattedPosts = items.map((item:Post) => ({
           title: item.title,
           link: item.link,
           description: item.description,
