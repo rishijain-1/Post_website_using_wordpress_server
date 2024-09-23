@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -49,19 +50,18 @@ const PostPage = () => {
   return (
     <div className="w-full max-w-4xl mx-auto p-8 bg-white shadow-md rounded-lg min-h-screen">
       <div className="flex justify-center">{post?.thumbnail && (
-        <img
+        <Image
           src={post.thumbnail.url}
           alt={post.title}
           className="w-50 h-50 rounded-lg mb-4 " 
+          width={400}
+          height={400}
         />
       )}</div>
       
       <h1 className="text-5xl font-bold mb-6 text-gray-800">{post?.title}</h1>
       <p className="text-gray-600 text-lg mb-2">
         {post?.pubDate ? new Date(post.pubDate).toLocaleDateString() : ''}
-      </p>
-      <p className="text-gray-600 mb-4">
-        <strong>Author:</strong> {post?.author || 'Unknown author'}
       </p>
       <p className="text-gray-600 mb-4">
         <strong>Creator:</strong> {post?.creator || 'Unknown creator'}

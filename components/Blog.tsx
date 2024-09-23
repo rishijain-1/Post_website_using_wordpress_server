@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -61,9 +62,11 @@ const BlogPosts = () => {
             <Link href={`/post/${index}`} passHref>
               <div className="block p-6 text-blue-600">
                 {post.thumbnail && (
-                  <img
+                  <Image
                     src={post.thumbnail}
                     alt={`Thumbnail for ${post.title}`}
+                    width={800} // You can adjust these values based on your layout
+                    height={450}
                     className="w-full h-48 object-cover rounded-md mb-4"
                   />
                 )}
