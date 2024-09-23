@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation'; // Import useParams to access the dynamic route parameter
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface Post {
@@ -8,10 +8,15 @@ interface Post {
   link: string;
   description: string;
   pubDate: string;
+  author: string;
+  creator: string;
+  category: string[];
+  guid: string;
+  thumbnail: { url: string };
 }
 
 const PostPage = () => {
-  const { id } = useParams(); // Use 'id' instead of 'slug'
+  const { id } = useParams();
 
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -21,7 +26,7 @@ const PostPage = () => {
     if (id) {
       const fetchPost = async () => {
         try {
-          const response = await fetch(`/api/fetchPost?id=${id}`); // Fetch post by 'id'
+          const response = await fetch(`/api/fetchPost?id=${id}`);
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -43,15 +48,31 @@ const PostPage = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-8 bg-white shadow-md rounded-lg min-h-screen">
+      <div className="flex justify-center">{post?.thumbnail && (
+        <img
+          src={post.thumbnail.url}
+          alt={post.title}
+          className="w-50 h-50 rounded-lg mb-4 " 
+        />
+      )}</div>
+      
       <h1 className="text-5xl font-bold mb-6 text-gray-800">{post?.title}</h1>
-      <p className="text-gray-600 text-lg mb-6">
-        {post?.pubDate ? new Date(post?.pubDate).toLocaleDateString() : ''}
+      <p className="text-gray-600 text-lg mb-2">
+        {post?.pubDate ? new Date(post.pubDate).toLocaleDateString() : ''}
+      </p>
+      <p className="text-gray-600 mb-4">
+        <strong>Author:</strong> {post?.author || 'Unknown author'}
+      </p>
+      <p className="text-gray-600 mb-4">
+        <strong>Creator:</strong> {post?.creator || 'Unknown creator'}
+      </p>
+      <p className="text-gray-600 mb-4">
+        <strong>Categories:</strong> {post?.category.join(', ') || 'Uncategorized'}
       </p>
       <div
         className="description text-gray-800 text-base leading-relaxed"
         dangerouslySetInnerHTML={{ __html: post?.description || '' }}
       />
-      
     </div>
   );
 };
