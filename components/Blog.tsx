@@ -3,19 +3,28 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+interface RSSItem {
+  title: string;
+  link: string;
+  description: string;
+  pubDate: string;
+  creator?: string; 
+  thumbnail?: { url: string }; 
+}
+
 interface Post {
   title: string;
   link: string;
   description: string;
   pubDate: string;
-  author: string; 
-  thumbnail: string | null; 
+  author: string;
+  thumbnail: string | null;
 }
 
-const BlogPosts = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+const BlogPosts: React.FC = () => {
+  const [posts, setPosts] = useState<Post[]>([]); 
+  const [loading, setLoading] = useState<boolean>(true); 
+  const [error, setError] = useState<string | null>(null); 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,29 +34,31 @@ const BlogPosts = () => {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        const items = data.items || [];
-  
-        const formattedPosts = items.map((item: any) => ({
+
+   
+        const items: RSSItem[] = data.items || [];
+
+        const formattedPosts: Post[] = items.map((item: RSSItem) => ({
           title: item.title,
           link: item.link,
           description: item.description,
           pubDate: item.pubDate,
-          author: item.creator || 'Unknown author', 
-          thumbnail: item.thumbnail?.url || null, 
+          author: item.creator || 'Unknown author',
+          thumbnail: item.thumbnail?.url || null,
         }));
 
-        setPosts(formattedPosts);
+        setPosts(formattedPosts); 
       } catch (error) {
         setError('Failed to fetch posts: ' + (error instanceof Error ? error.message : 'Unknown error'));
       } finally {
-        setLoading(false);
+        setLoading(false); 
       }
     };
 
-    fetchData();
+    fetchData(); 
   }, []);
 
-  if (loading) return <p className="text-center text-lg text-gray-500">Loading...</p>;
+  if (loading) return <p className="text-center text-lg text-gray-500">Loading...</p>; 
   if (error) return <p className="text-center text-lg text-red-500">{error}</p>;
 
   return (
@@ -65,7 +76,7 @@ const BlogPosts = () => {
                   <Image
                     src={post.thumbnail}
                     alt={`Thumbnail for ${post.title}`}
-                    width={800} // You can adjust these values based on your layout
+                    width={700} 
                     height={450}
                     className="w-full h-48 object-cover rounded-md mb-4"
                   />
