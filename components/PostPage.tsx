@@ -4,28 +4,27 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 interface Post {
-  title: string;
+  jetpack_featured_media_url: string;
+  title: string; // Changed to string as per the data structure
   link: string;
-  description: string;
+  description: string; // Changed to string as per the data structure
   pubDate: string;
   author: string;
-  creator: string;
-  category: string[];
+  category: string[]; // Changed to string[] to match the provided data structure
   guid: string;
-  thumbnail: { url: string };
 }
 
 const PostPage = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id) {
+    if (slug) {
       const fetchPost = async () => {
         try {
-          const response = await fetch(`/api/fetchPost?id=${id}`);
+          const response = await fetch(`/api/fetchPost?slug=${slug}`);
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -33,6 +32,7 @@ const PostPage = () => {
           setPost(data);
         } catch (error) {
           setError('Failed to fetch post');
+          console.error(error); // Log the error for debugging
         } finally {
           setLoading(false);
         }
@@ -40,43 +40,38 @@ const PostPage = () => {
 
       fetchPost();
     }
-  }, [id]);
+  }, [slug]);
 
   if (loading) return <p className="text-center text-lg text-gray-500">Loading...</p>;
   if (error) return <p className="text-center text-lg text-red-500">{error}</p>;
+
+  // Ensure the title is defined before using replace
+  const sanitizedTitle = post?.title?.replace(/&nbsp;/g, ' ').trim() || 'No Title';
 
   return (
     <div className="w-full max-w-4xl mx-auto p-8 bg-white shadow-md rounded-lg min-h-screen">
       {post && (
         <>
           <div className="flex justify-center">
-            {post.thumbnail && (
+            {post.jetpack_featured_media_url && (
               <Image
-                src={post.thumbnail.url}
-                alt={post.title}
-                className="w-50 h-50 rounded-lg mb-4"
+                src={post.jetpack_featured_media_url}
+                alt={sanitizedTitle}
+                className="rounded-lg mb-4"
                 width={300}
                 height={300}
               />
             )}
           </div>
-          <h1 className="text-5xl font-bold mb-6 text-gray-800">{post.title}</h1>
+          <h1 className="text-5xl font-bold mb-6 text-gray-800">{sanitizedTitle}</h1>
           <p className="text-gray-600 text-lg mb-2">
             {post.pubDate ? new Date(post.pubDate).toLocaleDateString() : ''}
           </p>
-          <p className="text-gray-600 mb-4">
-            <strong>Author:</strong> {post.author || 'Unknown author'}
-          </p>
-          <p className="text-gray-600 mb-4">
-            <strong>Creator:</strong> {post.creator || 'Unknown creator'}
-          </p>
-          <p className="text-gray-600 mb-4">
-            <strong>Categories:</strong> {post.category.join(', ') || 'Uncategorized'}
-          </p>
           <div
             className="description text-gray-800 text-base leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: post.description || '' }}
+            dangerouslySetInnerHTML={{ __html: post.description }}
           />
+          <p className="text-gray-600 text-base mt-4">Author: {post.author || 'Unknown author'}</p>
         </>
       )}
     </div>

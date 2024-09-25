@@ -4,12 +4,15 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 interface RSSItem {
+  excerpt: string;
+  date: string;
   title: string;
   link: string;
   description: string;
-  pubDate: string;
   creator?: string; 
   thumbnail?: { url: string }; 
+  slug?: string;
+  jetpack_featured_media_url?: string; 
 }
 
 interface Post {
@@ -19,8 +22,10 @@ interface Post {
   pubDate: string;
   author: string;
   thumbnail: string | null;
+  slug: string;
+  excerpt: string,
+  jetpack_featured_media_url: string | null; 
 }
-
 const BlogPosts: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]); 
   const [loading, setLoading] = useState<boolean>(true); 
@@ -34,18 +39,30 @@ const BlogPosts: React.FC = () => {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-
-   
+        console.log(data);
         const items: RSSItem[] = data.items || [];
 
-        const formattedPosts: Post[] = items.map((item: RSSItem) => ({
-          title: item.title,
-          link: item.link,
-          description: item.description,
-          pubDate: item.pubDate,
-          author: item.creator || 'Unknown author',
-          thumbnail: item.thumbnail?.url || null,
-        }));
+        console.log(items);
+        const formattedPosts: Post[] = items.map((item: RSSItem) => {
+          // Remove <p> tags and [&hellip;] from the excerpt
+          const cleanedExcerpt = item.excerpt
+            .replace(/<p>/g, '')
+            .replace(/<\/p>/g, '')
+            .replace(/\[\&hellip;\]/g, '')
+            .trim();
+        
+          return {
+            title: item.title,
+            link: item.link,
+            excerpt: cleanedExcerpt,
+            pubDate: item.date,
+            author: item.creator || 'Unknown author',
+            thumbnail: item.thumbnail?.url || null,
+            slug: item.slug ?? '', // Provide a default value if slug is undefined
+            jetpack_featured_media_url: item.jetpack_featured_media_url || null,
+            description: item.description,
+          };
+        });
 
         setPosts(formattedPosts); 
       } catch (error) {
@@ -70,27 +87,23 @@ const BlogPosts: React.FC = () => {
             key={index}
             className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
           >
-            <Link href={`/post/${index}`} passHref>
+            <Link href={`/post/${post.slug}`} passHref>
               <div className="block p-6 text-blue-600">
-                {post.thumbnail && (
+                {post.jetpack_featured_media_url && (
                   <Image
-                    src={post.thumbnail}
+                    src={post.jetpack_featured_media_url}
                     alt={`Thumbnail for ${post.title}`}
                     width={700} 
-                    height={450}
-                    className="w-full h-48 object-cover rounded-md mb-4"
+                    height={450} 
+                    className="object-cover h-48 w-full"
                   />
                 )}
-                <h2 className="text-2xl font-semibold mb-2">{post.title}</h2>
-                <p className="text-gray-600 text-sm mb-2">
-                  {new Date(post.pubDate).toLocaleDateString()} • By {post.author}
-                </p>
-                <div
-                  className="description text-gray-800 overflow-hidden line-clamp-2"
-                  dangerouslySetInnerHTML={{ __html: post.description }}
-                />
+                <h2 className="text-xl font-bold">{post.title}</h2>
+                <p className="text-sm text-gray-600">{post.pubDate}</p>
+                
               </div>
             </Link>
+            <p className="mt-1 p-6 text-black">{post.excerpt}</p>
           </li>
         ))}
       </ul>

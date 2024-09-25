@@ -1,35 +1,25 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { parseStringPromise } from 'xml2js';
 
-interface Channel {
-  title?: string[];
-  link?: string[];
-  description?: string[];
-  item?: Item[];
-}
-
-interface Item {
-  title?: string[];
-  link?: string[];
-  description?: string[];
-  'content:encoded'?: string[];
-  pubDate?: string[];
-  author?: string[];
-  'dc:creator'?: string[]; // Dublin Core's creator field
-  category?: string[];
-  guid?: string[];
-  'media:thumbnail'?: MediaContent[]; // Thumbnail
-  'media:content'?: MediaContent[]; // Media content
-}
-
-interface MediaContent {
-  $: {
-    url: string;
-    type?: string;
-    width?: string;
-    height?: string;
+interface Post {
+  id: number;
+  date: string;
+  modified: string;
+  title: {
+    rendered: string;
   };
+  content: {
+    rendered: string;
+  };
+  excerpt: {
+    rendered: string;
+  };
+  author: number;
+  link: string;
+  featured_media: number;
+  categories: number[];
+  slug: string; // Add slug
+  jetpack_featured_media_url: string; // Add jetpack_featured_media_url
 }
 
 interface FeedResponse {
@@ -40,89 +30,60 @@ interface FeedResponse {
 }
 
 interface FormattedItem {
+  id: number;
+  date: string;
   title: string;
   link: string;
-  description: string;
-  pubDate: string;
-  author: string;
-  creator: string;
-  category: string[];
-  guid: string;
-  media: MediaContentFormatted[]; 
-  thumbnail: MediaContentFormatted | null;
-}
-
-interface MediaContentFormatted {
-  url: string;
-  type?: string;
-  width?: string;
-  height?: string;
+  content: string;
+  excerpt: string;
+  author: number;
+  featured_media: number;
+  categories: number[];
+  slug: string; 
+  jetpack_featured_media_url: string; 
 }
 
 export async function GET() {
   try {
-    
-    const response = await axios.get('https://blog55973.wordpress.com/feed/');
-    
+    const response = await axios.get<Post[]>('https://public-api.wordpress.com/wp/v2/sites/blog55973.wordpress.com/posts');
+
     if (response.status !== 200) {
-      throw new Error(`Failed to fetch RSS feed: ${response.statusText}`);
+      throw new Error(`Failed to fetch posts: ${response.statusText}`);
     }
 
-    const xmlData = response.data;
+    const posts: Post[] = response.data;
 
-
-    const result = await parseStringPromise(xmlData as string);
-    if (!result?.rss?.channel?.[0]) {
-      throw new Error('Unexpected RSS feed structure');
-    }
-
-    const channel = result.rss.channel[0] as Channel;
-
-    const title = channel.title?.[0] || 'No title';
-    const link = channel.link?.[0] || 'No link';
-    const description = channel.description?.[0] || 'No description';
-
-    const items = channel.item || [];
-
-    // Extract and format additional data like creator, media, and thumbnail
-    const formattedItems: FormattedItem[] = items.map((item: Item) => ({
-      title: item.title?.[0] || 'No title',
-      link: item.link?.[0] || '#',
-      description: item['content:encoded']?.[0] || item.description?.[0] || 'No description',
-      pubDate: item.pubDate?.[0] || 'No date',
-      author: item.author?.[0] || 'Unknown author',
-      creator: item['dc:creator']?.[0] || 'Unknown creator', 
-      category: item.category || ['Uncategorized'], 
-      guid: item.guid?.[0] || 'No GUID',
-      thumbnail: item['media:thumbnail']?.[0]
-        ? {
-            url: item['media:thumbnail'][0].$.url,
-            width: item['media:thumbnail'][0].$.width,
-            height: item['media:thumbnail'][0].$.height,
-          }
-        : null, 
-      media: (item['media:content'] || []).map((media: MediaContent) => ({
-        url: media.$.url,
-        type: media.$.type,
-        width: media.$.width,
-        height: media.$.height,
-      })),
+    // Format the posts into the desired response structure
+    const formattedItems: FormattedItem[] = posts.map((post) => ({
+      id: post.id,
+      date: post.date,
+      title: post.title.rendered,
+      link: post.link,
+      content: post.content.rendered,
+      excerpt: post.excerpt.rendered,
+      author: post.author,
+      featured_media: post.featured_media,
+      categories: post.categories,
+      slug: post.slug, // Include slug
+      jetpack_featured_media_url: post.jetpack_featured_media_url, // Include jetpack_featured_media_url
     }));
 
-
     const responsePayload: FeedResponse = {
-      title,
-      link,
-      description,
+      title: 'WordPress Blog Posts',
+      link: 'https://blog55973.wordpress.com/',
+      description: 'Latest posts from the WordPress blog.',
       items: formattedItems,
     };
 
     return NextResponse.json(responsePayload);
   } catch (error) {
-    console.error('Error fetching or parsing RSS feed:', error);
-    return NextResponse.json({
-      error: 'Failed to fetch or parse XML',
-      details: (error as Error).message,
-    }, { status: 500 });
+    console.error('Error fetching posts:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch posts',
+        details: (error as Error).message,
+      },
+      { status: 500 }
+    );
   }
 }
